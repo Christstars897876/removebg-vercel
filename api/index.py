@@ -23,7 +23,14 @@ def handler(request):
         result = remover.remove(image)
 
         # Resize to max 512x512 to reduce response size
-        result.thumbnail((512, 512), Image.ANTIALIAS)
+        # Note: Image.ANTIALIAS est obsolète dans les versions récentes de Pillow,
+        # on utilise Image.Resampling.LANCZOS ou Image.LANCZOS pour éviter les bugs.
+        try:
+            resample_filter = Image.Resampling.LANCZOS
+        except AttributeError:
+            resample_filter = Image.LANCZOS
+            
+        result.thumbnail((512, 512), resample_filter)
 
         # Convert to PNG + base64
         buffer = io.BytesIO()
@@ -45,3 +52,6 @@ def handler(request):
 
     except Exception as e:
         return {"statusCode": 500, "body": f"Error: {str(e)}"}
+
+# Variable globale pour que Vercel trouve l'entpoint (Point d'entrée)
+app = handler
